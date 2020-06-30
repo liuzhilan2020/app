@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:mvc="http://www.springframework.org/schema/mvc"
+    xmlns:p="http://www.springframework.org/schema/p"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xsi:schemaLocation="
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/mvc
+        http://www.springframework.org/schema/mvc/spring-mvc.xsd">
+       <!-- 对注解支持，扫描对所有注解标注的类，将这些类交给ioc容器管理 --> 
+   <context:component-scan base-package="cn.appsys.controller"/>
+   <!--为我们的系统注入handlemapper类，进行url和control的映射  -->
+   <mvc:annotation-driven><!-- ajax中出现406 -->
+   		<mvc:message-converters>
+   		<!--避免中文乱码  -->
+   			<bean class="org.springframework.http.converter.StringHttpMessageConverter">
+   				<property name="supportedMediaTypes">
+   					<list>
+   						<value>application/json;charset=UTF-8</value>
+   					</list>
+   				</property>
+   			</bean>
+   			<bean class="com.alibaba.fastjson.support.spring.FastJsonHttpMessageConverter">
+   				<property name="supportedMediaTypes">
+   					<list>
+   						<value>text/html;charset=UTF-8</value>
+   						<value>application/json</value>
+   					</list>
+   				</property>
+   				<property name="features">
+   					<list>
+   					<!-- 日期输出的时候采用DateFormat默认是年月日，时分秒，如果不需要时分秒的话，在实体类加上@JsonFiled注解 -->
+   						<value>WriteDateUseDateFormat</value>
+   					</list>
+   				</property>
+   			</bean>
+   		</mvc:message-converters>
+   </mvc:annotation-driven>
+   <!--加载静态文件  -->
+   <mvc:resources location="/statics/" mapping="/statics/**"></mvc:resources>
+    
+    <!-- 配置多视图解析器 后面会用到json  配置了多视图解析器 以后能以json纯数据格式输出-->
+    <bean class="org.springframework.web.servlet.view.ContentNegotiatingViewResolver">
+        <!--favorParameter根据请求中参数的值确定内容展示的形式，参数就是favorParameter这个参数  -->
+        <property name="favorParameter" value="true"/> 
+        <!--当没有指定任何形式展示的时候，采用默认的展示方式defaultContentType  -->
+        <property name="defaultContentType" value="text/html" /> 
+        <!-- 列举请求参数值所对应的 mediaTypes-->
+        <property name="mediaTypes">
+            <map>
+            	<entry key="html" value="text/html; charset=UTF-8"/>
+                <entry key="json" value="application/json; charset=UTF-8"/>
+                <entry key="xml" value="application/xml; charset=UTF-8"/>
+            </map>
+        </property>
+        <!--根据controller方法 返回的视图名进行视图解析 -->
+        <property name="viewResolvers">
+            <list>
+            <!--通过前缀和后缀的指定，中间加上controller返回的视图名  ，就可以拼成前台jsp路径，就可以进行展示了-->
+                <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+				   <!-- 前缀 -->
+				   <property name="prefix" value="/WEB-INF/jsp/"/>
+				   <!-- 后缀 -->
+				   <property name="suffix" value=".jsp"/>
+			   </bean>
+            </list>
+        </property>
+    </bean>
+ 
+	<!-- 配置interceptors -->
+<!-- 	<mvc:interceptors>
+		<mvc:interceptor>
+			<mvc:mapping path="/manager/backend/**"/>
+			<mvc:mapping path="/dev/flatform/**"/>
+			<bean class="cn.appsys.interceptor.SysInterceptor"/>
+		</mvc:interceptor>
+		
+	</mvc:interceptors> -->
+	
+	<!-- 配置文件上传  MultipartResolver-->
+	<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+		<property name="maxUploadSize" value="500000000"/>
+		<property name="defaultEncoding" value="UTF-8"/>
+	</bean>
+</beans>   

@@ -1,0 +1,18 @@
+.x_content form ul {
+	list-style: none;
+}
+
+.x_content form ul li {
+	width: 350px;
+	display: inline-block;/* 横排对齐 */
+	height:40px;
+	line-height: 40px;/* 行间距 */
+	vertical-align: middle;/* 垂直方向对齐 */
+}
+
+.tooltip{
+	z-index:9999999999;
+}
+.dropdown-menu{
+	min-width:105px;
+}

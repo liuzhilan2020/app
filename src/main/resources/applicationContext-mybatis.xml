@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>  
+    <beans xmlns="http://www.springframework.org/schema/beans"  
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  
+            xmlns:aop="http://www.springframework.org/schema/aop"  
+            xmlns:p="http://www.springframework.org/schema/p"  
+            xmlns:tx="http://www.springframework.org/schema/tx"  
+            xmlns:context="http://www.springframework.org/schema/context"  
+            xsi:schemaLocation="   
+                http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd   
+                http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd   
+                http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd 
+                http://www.springframework.org/schema/context 
+                http://www.springframework.org/schema/context/spring-context.xsd">  
+         <!--注解的扫描，扫描完以后把这些交给spring ioc容器管理  -->       
+    <context:component-scan base-package="cn.appsys.service"/> 
+    <context:component-scan base-package="cn.appsys.dao"/> 
+    <context:annotation-config />
+    <!--数据源的配置，读取database.properties  -->
+   	<context:property-placeholder location="classpath:database.properties"/>
+    <!-- JNDI获取数据源(使用dbcp连接池)数据源信息的配置 -->  
+     <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close" scope="singleton">
+		    <property name="driverClassName" value="${driver}"/>
+		    <property name="url" value="${url}"/>
+		    <property name="username" value="${user}"/>
+		    <property name="password" value="${password}"/>
+		    <property name="initialSize" value="${initialSize}"/>
+			<property name="maxActive" value="${maxActive}"/>
+			<property name="maxIdle" value="${maxIdle}"/>
+			<property name="minIdle" value="${minIdle}"/>
+			<property name="maxWait" value="${maxWait}"/>
+			<property name="removeAbandoned" value="${removeAbandoned}"/>
+			<property name="removeAbandonedTimeout" value="${removeAbandonedTimeout}"/>
+			<property name= "testWhileIdle" value="true"/>
+			<property name= "timeBetweenEvictionRunsMillis" value="60000"/>
+			<property name= "testOnBorrow" value="false"/>
+			<property name= "testOnReturn" value="false"/>
+			<property name= "validationQuery" value="select 1"/>
+			<property name= "numTestsPerEvictionRun" value="${maxActive}"/>
+	 	</bean>
+	 	
+    <!-- 事务管理   -->
+    <bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">  
+    	<!--dataSource用于对数据库的管理  -->
+    	<property name="dataSource" ref="dataSource"/>  
+ 	</bean>
+ 	<!--配置事务增强  使用的是Spring面向切面的编程，要增强处理就要有切点切面，把增强织入到切面，实现对事务的管理-->
+   <tx:advice id="myAdvice" transaction-manager="txManager">
+   <!-- 事务配置的规则 -->  
+    	<tx:attributes> 
+    	 <!--方法名以appsys开头的方法，采用我们所规定的事务规则   
+    	REQUIRED表示我们配置事务规则的方法始终处于事务中，如果没有处于事务，则为它生成事务，
+    	Exception当方法碰到异常的时候进行回滚   *表示其他方法默认配置，不做详细配置-->
+	        <tx:method name="appsys*"  propagation="REQUIRED" rollback-for="Exception"  />
+	        <tx:method name="*" />
+    	</tx:attributes>  
+ 	</tx:advice>
+ 	<!--配置切面   为 Sping中配置切面的bean创建代理 -->
+ 		<aop:aspectj-autoproxy/>
+ 		<!-- proxy-target-class="true"采用的是cglib动态代理,值为false的话是采用jdk代理 -->
+      <aop:config proxy-target-class="true">
+      <!--表达式：告诉Sping到什么地方去织入增强 》》业务层 -->
+      	<aop:pointcut expression="execution(* *cn.appsys.service..*(..))" id="transService"/>
+      	<!-- 指定切面 -->
+      	<aop:advisor advice-ref="myAdvice" pointcut-ref="transService"/>
+      </aop:config>
+ 	<!-- 配置mybatis SqlSessionFactoryBean 作用：对数据库的操作-->
+ 	<bean id="sqlSessionFactoryBean" class="org.mybatis.spring.SqlSessionFactoryBean">
+ 		<property name="dataSource" ref="dataSource"/>
+ 		<!-- configLocation作用是加载mybatis的配置文件 -->
+ 		<property name="configLocation" value="classpath:mybatis-config.xml"/>
+ 	</bean>
+ 	 
+ <!--为dao下面的下面的接口进行扫描和生成对应的mapperfactorybean，进行对数据库的操作 -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+    	<property name="basePackage" value="cn.appsys.dao"/>
+    </bean>       
+</beans>
